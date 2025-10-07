@@ -5,22 +5,26 @@ import { RiCloseLargeLine } from "react-icons/ri";
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from "react-router-dom";
 import { CiLogout } from "react-icons/ci";
+import { GiGraduateCap } from "react-icons/gi";
 export default function Header() { 
     const navigate = useNavigate();
     const [showNav, setShowNav] = useState(false);
     const { isAuthenticated, logout } = useContext(AuthContext);
-    return ( 
-        <header className="flex w-full justify-between items-center px-12 py-4">
+    return (
+        <>
+        <header className="flex w-full justify-between items-center px-12 py-2 fixed top-0 bg-white z-10 ">
             <div className="flex items-center gap-3"> 
-                <div className="text-gray-50 bg-[var(--primary)] p-3 w-10 h-10 flex items-center justify-center rounded-lg">
-                    E
+                <div className="text-gray-50 bg-[var(--primary)] p-3 w-13 h-13 flex items-center justify-center rounded-lg">
+                    
+                       <GiGraduateCap className="text-white w-10 h-10" />
+                    
                 </div>
                 <div className="text-lg font-bold">
                     EduMaster
                 </div>
             </div>
             {/* desktop navbar */}
-            <div className="flex items-center gap-4"> 
+            <div className="flex items-center gap-5"> 
                 <Navbar className='md:flex hidden'/>
                 <div className="hidden md:flex items-center gap-4 text-black hover:text-white border-1
                 border-red-500 hover:bg-red-500 p-3 rounded-xl cursor-pointer transition-all duration-200 ease-linear"
@@ -66,5 +70,8 @@ export default function Header() {
                 </div> 
             }
         </header>
+        {/* spacer to prevent fixed header from covering page content; adjust h-16 as needed */}
+        <div className="h-16" />
+        </>
     )
 }

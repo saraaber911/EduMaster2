@@ -15,13 +15,17 @@ import ManageExam from './pages/ManageExam';
 import ManageQuestion from './pages/ManageQuestion';
 import CreateQuestion from './pages/CreateQuestion';
 import ManageLesson from './pages/ManageLesson';
-import CreateExam from './pages/CreateExam';
+// import CreateExam from './pages/CreateExam';
 import PurchasedLessons from './pages/PurchasedLessons';
-import Exams from './pages/Exams';
-import StartExam from './pages/StartExam';
-import ShowScore from './pages/ShowScore';
-import Profile from './pages/Profile';
-import ResetPassword from './pages/ResetPassword';
+import Profile from './pages/profile';
+import ExamPage from './pages/exam';
+import ExamDetails from './pages/ExamDetails';
+import ExamTaking from './pages/ExamTaking';
+// import Exams from './pages/Exams';
+// import StartExam from './pages/StartExam';
+// import ShowScore from './pages/ShowScore';
+// import Profile from './pages/Profile';
+// import ResetPassword from './pages/ResetPassword';
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useContext(AuthContext);
   if (loading) return null;
@@ -47,13 +51,19 @@ function App() {
           <Route path="/manage-question" element={<ProtectedRoute><ManageQuestion /></ProtectedRoute>} />  
           <Route path="/create-question" element={<ProtectedRoute><CreateQuestion /></ProtectedRoute>} />  
           <Route path="/manage-lesson" element={<ProtectedRoute><ManageLesson /></ProtectedRoute>} />  
-          <Route path="/create-exam" element={<ProtectedRoute><CreateExam /></ProtectedRoute>} />  
+          {/* <Route path="/create-exam" element={<ProtectedRoute><CreateExam /></ProtectedRoute>} />   */}
           <Route path="/purchased-lessons" element={<ProtectedRoute><PurchasedLessons /></ProtectedRoute>} />  
-          <Route path="/exams" element={<ProtectedRoute><Exams /></ProtectedRoute>} />  
+          <Route path='/profile' element={<ProtectedRoute><Profile/></ProtectedRoute>}/>
+          <Route path='/exams' element={<ProtectedRoute><ExamPage/></ProtectedRoute>}/>
+          <Route path='/exam/:examId' element={<ProtectedRoute><ExamDetails/></ProtectedRoute>}/>
+          <Route path='/exam-taking/:examId' element={<ProtectedRoute><ExamTaking/></ProtectedRoute>}/>
+          {/* <Route path="/exams" element={<ProtectedRoute><Exams /></ProtectedRoute>} />  
           <Route path="/start-exam" element={<ProtectedRoute><StartExam /></ProtectedRoute>} />  
           <Route path="/show-score" element={<ProtectedRoute><ShowScore /></ProtectedRoute>} />   
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />   
-          <Route path="/reset-password" element={<ProtectedRoute><ResetPassword /></ProtectedRoute>} />   
+          <Route path="/reset-password" element={<ProtectedRoute><ResetPassword /></ProtectedRoute>} />    */}
+          
+
         </Routes>
       </AuthProvider>
     </Router>

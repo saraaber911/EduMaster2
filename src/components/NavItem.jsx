@@ -12,6 +12,6 @@ export default function NavItem({active, children, id}) {
         }
     }
     return ( 
-        <div className={`${active === id ? activeTabStyles : 'hover-tab' } p-3 text-center`} onClick={() => navigateToPage(id)}>{children}</div>
+        <div className={`${active === id ? activeTabStyles : 'hover-tab' } p-2 text-center`} onClick={() => navigateToPage(id)}>{children}</div>
     )
 }

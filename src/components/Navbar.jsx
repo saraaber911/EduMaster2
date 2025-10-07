@@ -41,7 +41,7 @@ export default function Navbar({className}) {
         }
     }, [role])
     return ( 
-        <nav className={`gap-5 p-3 bg-[var(--primary-bg)] rounded-4xl text-[var(--primary)] ${className}`}> 
+        <nav className={`gap-5 p-2 bg-[var(--primary-bg)] rounded-4xl text-[var(--primary)] ${className}`}> 
             { 
                 tabs.map((item, index) => ( 
                     <NavItem id={item.href} key={index} active={active}>
