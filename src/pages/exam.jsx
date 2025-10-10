@@ -44,34 +44,31 @@ const ExamPage = () => {
       const data = await response.json();
       console.log('API Response:', data);
 
-      // معالجة البيانات
+      // معالجة البيانات حسب التنسيق الجديد
       let examsList = [];
 
-      if (Array.isArray(data)) {
+      if (data && data.success === true && Array.isArray(data.data)) {
+        examsList = data.data;
+      } else if (Array.isArray(data)) {
         examsList = data;
-      } else if (data && data.success === true && Array.isArray(data.data)) {
-        examsList = data.data;
-      } else if (data && data.success === true && data.data) {
-        examsList = Array.isArray(data.data) ? data.data : [data.data];
-      } else if (data && Array.isArray(data.data)) {
-        examsList = data.data;
       } else if (data && data.data) {
-        examsList = [data.data];
-      } else if (data && typeof data === 'object' && !data.success && !data.data) {
-        examsList = [data];
+        examsList = Array.isArray(data.data) ? data.data : [data.data];
       } else {
         examsList = [];
       }
 
-      // تنسيق البيانات
-      const processedExams = examsList.filter(exam => exam && (exam._id || exam.id)).map(exam => ({
+      // تنسيق البيانات حسب التنسيق الجديد
+      const processedExams = examsList.filter(exam => exam && (exam._id)).map(exam => ({
         ...exam,
-        id: exam._id || exam.id,
-        title: exam.title || exam.name || 'Untitled Exam',
-        subject: exam.subject || exam.category || 'General',
-        duration: exam.duration || exam.timeLimit || 60,
-        questionsCount: exam.questions?.length || exam.questionsCount || 0,
-        status: getExamStatus(exam)
+        id: exam._id ,
+        title: exam.title || 'Untitled Exam',
+        description: exam.description || '',
+        subject: exam.classLevel || exam.subject || 'General',
+        duration: exam.duration || 60,
+        questionsCount: exam.questions?.length || 0,
+        status: getExamStatus(exam),
+        isPublished: exam.isPublished,
+        createdAt: exam.createdAt
       }));
 
       console.log('Loaded', processedExams.length, 'exams');
@@ -200,30 +197,24 @@ const ExamPage = () => {
 
   if (loading) {
     return (
-      <>
-      <Header />
-        <div className="min-h-screen bg-blue-50">
-        
-        <div className="flex items-center justify-center h-110">
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading exams...</p>
           </div>
         </div>
-        
+        <Footer />
       </div>
-      <Footer />
-      </>
     );
   }
 
   // إذا لم يكن هناك token
   if (!token) {
     return (
-      <>
-      <Header />
       <div className="min-h-screen bg-gray-50">
-        
+        <Header />
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
@@ -231,10 +222,8 @@ const ExamPage = () => {
             <p className="text-gray-600">Please log in to view your exams.</p>
           </div>
         </div>
-        
+        <Footer />
       </div>
-      <Footer />
-      </>
     );
   }
 
@@ -257,15 +246,15 @@ const ExamPage = () => {
       </div>
 
       {/* Search Box */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="relative max-w-md">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="relative max-w-md mx-auto sm:mx-0">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
             placeholder="Search exams by title or subject..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
           />
         </div>
       </div>
@@ -289,10 +278,12 @@ const ExamPage = () => {
     )}
 
     {/* Exam Cards Section */}
-    <div className=" max-w-6xl mx-auto px-4 sm:px-6 bg-white lg:px-8 py-8 rounded-lg shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Available Exams</h2>
-        <span className="text-sm text-gray-500">{filteredExams.length} exam(s) found</span>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 bg-white rounded-lg shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Available Exams</h2>
+        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+          {filteredExams.length} exam{filteredExams.length !== 1 ? 's' : ''} found
+        </span>
       </div>
 
       {filteredExams.length === 0 && !error ? (
@@ -308,35 +299,49 @@ const ExamPage = () => {
           {filteredExams.map((exam) => (
             <div
               key={exam.id}
-              className="border border-gray-200 rounded-lg p-5 hover:shadow-md hover:border-blue-300 transition-all duration-200 bg-gray-50"
+              className="border border-gray-200 rounded-lg p-5 sm:p-6 hover:shadow-lg hover:border-blue-300 transition-all duration-200 bg-gray-50"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-start">
-                  <div className="bg-blue-100 p-2 rounded-lg mr-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start flex-1">
+                  <div className="bg-blue-100 p-2 rounded-lg mr-4 flex-shrink-0">
                     <Clock className="h-5 w-5 text-blue-600" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-gray-900">{exam.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(exam.status)}`}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+                      <h3 className="font-semibold text-gray-900 text-lg">{exam.title}</h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium self-start ${getStatusColor(exam.status)}`}>
                         {exam.status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Subject: {exam.subject} • {exam.questionsCount} questions • {exam.duration} min
-                    </p>
+
+                    {/* {exam.description && (
+                      <p className="text-sm text-gray-600 mb-3 overflow-hidden" style={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: 'vertical'
+                      }}>
+                        {exam.description}
+                      </p>
+                    )} */}
+
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mb-2">
+                      <span className="bg-gray-100 px-2 py-1 rounded text-xs">📚 {exam.subject}</span>
+                      <span className="bg-gray-100 px-2 py-1 rounded text-xs">❓ {exam.questionsCount} questions</span>
+                      <span className="bg-gray-100 px-2 py-1 rounded text-xs">⏱️ {exam.duration} min</span>
+                    </div>
+
                     {formatTimeRemaining(exam) && (
-                      <p className="text-sm text-blue-600 font-medium mt-1">
+                      <p className="text-sm text-blue-600 font-medium">
                         {formatTimeRemaining(exam)}
                       </p>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 w-full md:w-auto lg:w-auto lg:flex-shrink-0">
                   <button
                     onClick={() => navigate(`/exam/${exam.id}`)}
-                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center"
+                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center"
                   >
                     <Eye className="h-4 w-4 mr-2" />
                     Details
@@ -346,7 +351,7 @@ const ExamPage = () => {
                     exam.status === 'Active') && (
                     <button
                       onClick={() => handleStartExam(exam)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center font-medium"
                     >
                       <Play className="h-4 w-4 mr-2" />
                       Start Exam

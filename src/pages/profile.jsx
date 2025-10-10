@@ -22,11 +22,12 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-
+  const [isSaving, setIsSaving] = useState(false);
+  
   useEffect(() => {
     fetchProfile();
   }, []);
-
+  
   const fetchProfile = async () => {
     // const id = user.data.id;
     try {
@@ -36,11 +37,11 @@ export default function Profile() {
       setError('No authentication token found');
       return;
     }
-    console.log('Token being used:', token); 
+    console.log('Token being used:', token);
       const res = await fetch('https://edu-master-psi.vercel.app/user/', {
         headers: {
-          // 'Authorization': `Bearer ${token}`,
-          token : token,
+          'Authorization': `Bearer ${token}`,
+          token: token, // fallback if backend expects this header
           'Content-Type': 'application/json'
         }
       });
@@ -63,45 +64,69 @@ export default function Profile() {
       console.log(token)
     }
   };
-
+  
   const updateProfile = async () => {
-    // const id = user.data._id;
-     let id;
-
-    // من الـ context user
-    if (user) {
-      id = user.id || user._id || user.data?.id || user.data?._id;
-    }
-    
-//     if (!user || !user.data._id) {
-//   console.error("User not found or missing id");
-//   return;
-// }
+    setError('');
+    setMessage('');
+    setIsSaving(true);
     try {
-      // const user = JSON.parse(localStorage.getItem("user") || "{}");
-      // const id =user._id;
+      // حاول استخراج id من ال-context أولاً
+      let id = user?.id || user?._id || user?.data?.id || user?.data?._id;
+
+      // لو ما وجدنا id، نطلب endpoint المسيطر على المستخدم للحصول عليه
+      if (!id) {
+        const meRes = await fetch('https://edu-master-psi.vercel.app/user/', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            token: token,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (meRes.ok) {
+          const meJson = await meRes.json();
+          id = meJson.data?.id || meJson.data?._id;
+        }
+      }
+
+      if (!id) {
+        setError('User id not found. تأكد من تسجيل الدخول.');
+        return;
+      }
 
       const res = await fetch(`https://edu-master-psi.vercel.app/user/${id}`, {
         method: 'PUT',
         headers: {
-          token:token,
+          'Authorization': `Bearer ${token}`,
+          token: token,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(profileData)
       });
 
+      const resJson = await res.json().catch(() => ({}));
       if (res.ok) {
+        // لو الـ API رجع البيانات المحدّثة استخدمها لتحديث الواجهة
+        if (resJson.data) {
+          setProfileData({
+            fullName: resJson.data.fullName || profileData.fullName,
+            email: resJson.data.email || profileData.email,
+            phoneNumber: resJson.data.phoneNumber || profileData.phoneNumber,
+            classLevel: resJson.data.classLevel || profileData.classLevel
+          });
+        }
         setMessage('Profile updated successfully!');
         setTimeout(() => setMessage(''), 3000);
       } else {
-        setError('Failed to update profile');
+        setError(resJson.message || 'Failed to update profile');
       }
     } catch (err) {
-        console.log(err)
+      console.log(err);
       setError('Network error');
+    } finally {
+      setIsSaving(false);
     }
-  };
-
+   };
+  
   const updatePassword = async () => {
     if (passwordData.newPassword !== passwordData.cpassword) {
       setError('New passwords do not match');
@@ -142,20 +167,16 @@ export default function Profile() {
   // if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (loading) {
     return (
-      <>
-      <Header />
-      <div className="min-h-screen bg-blue-50">
-        
-        <div className="flex items-center justify-center h-110">
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading Profile...</p>
           </div>
         </div>
-        
+        <Footer />
       </div>
-      <Footer />
-      </>
     );
   }
 
@@ -164,16 +185,16 @@ export default function Profile() {
       <Header />
       <div className="min-h-screen bg-gray-50">
         {/* Hero Section */}
-        <div className="bg-blue-50 px-6 py-8">
-          <div className="max-w-6xl mx-auto flex items-center gap-4">
+        <div className="bg-blue-50 px-4 sm:px-6 py-8">
+          <div className="max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-center gap-4">
             <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
               {profileData.fullName.charAt(0)}
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">{profileData.fullName}</h1>
+            <div className="flex-1">
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">{profileData.fullName}</h1>
               <p className="text-gray-600">Manage your account, progress, and notification settings</p>
             </div>
-            <div className="ml-auto flex gap-6 text-sm">
+            <div className="flex flex-col sm:flex-row lg:ml-auto gap-4 sm:gap-6 text-sm">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-blue-500" />
                 <span>Streak: 12 days</span>
@@ -190,9 +211,9 @@ export default function Profile() {
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 py-8 flex gap-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Sidebar */}
-          <div className="w-64">
+          <div className="w-full lg:w-64">
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold text-gray-800 mb-4">Profile Menu</h3>
               {menuItems.map((item) => (
@@ -230,7 +251,7 @@ export default function Profile() {
             {activeSection === 'Account' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-2xl font-bold mb-6">Account Information</h2>
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                     <input
@@ -272,12 +293,13 @@ export default function Profile() {
                     />
                   </div>
                 </div>
-                <div className="flex gap-4 mt-6">
+                <div className="flex flex-col sm:flex-row gap-4 mt-6">
                   <button
                     onClick={updateProfile}
-                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                    disabled={isSaving}
+                    className={`px-6 py-3 rounded-lg transition ${isSaving ? 'bg-blue-300 text-white cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                   >
-                    Save Changes
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition">
                     Edit Profile
@@ -290,7 +312,7 @@ export default function Profile() {
             {activeSection === 'Security' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-2xl font-bold mb-6">Security</h2>
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div>
                     <h3 className="font-semibold mb-4">Password</h3>
                     <div className="space-y-4">
@@ -370,7 +392,7 @@ export default function Profile() {
             {activeSection === 'Learning Goals' && (
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-2xl font-bold mb-6">Learning Goals</h2>
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <h3 className="font-semibold mb-4">Current Goal</h3>
                     <p className="text-gray-600 mb-4">Improve Algebra score to 90%+</p>
